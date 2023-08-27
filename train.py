@@ -2,20 +2,16 @@ import numpy as np
 import random
 import math
 import torch
-def randomwalk(length,graph,start_node):
+def randomwalk(length, graph, start_node):
     current_node = start_node
     for step in range(length):
-        # 获取当前节点的邻居节点
-        neighbors = graph[current_node].indices
+        neighbors = graph[current_node].indices.tolist()  # 转换为列表
         if len(neighbors) == 0:
-            # 当前节点没有邻居，随机游走结束
             break
-        # 随机选择一个邻居作为下一步的节点
         next_node = random.choice(neighbors)
-        # 更新当前节点为下一步的节点
         current_node = next_node
-    radio = 1/length
-    return current_node,radio
+    radio = 1 / length
+    return current_node, radio
 
 def propagateGpu(k,graph,vector_origin,M,N,KsampleNum):
     vector = torch.zeros((M + N, N), dtype=torch.float32, device='cuda')
