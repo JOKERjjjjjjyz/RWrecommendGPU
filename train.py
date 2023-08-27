@@ -18,15 +18,35 @@ def randomwalk(length, graph, start_node):
     radio = 1 / length
     return current_node, radio
 
-def propagateGpu(k,graph,vector_origin,M,N,KsampleNum):
+# def propagateGpu(k,graph,vector_origin,M,N,KsampleNum):
+#     vector = torch.zeros((M + N, N), dtype=torch.float32, device='cuda')
+#     for user_idx in range(M):
+#         for j in range(KsampleNum):
+#             print("Training:Epoch",k,",(user,j):(",user_idx,",",j,")")
+#             targetNode,radio = randomwalk(k, graph, user_idx)
+#             vector[targetNode] += radio*vector_origin[user_idx]*0.001
+#     return vector
+def propagateGpu(k, graph, vector_origin, M, N, KsampleNum):
     vector = torch.zeros((M + N, N), dtype=torch.float32, device='cuda')
-    for user_idx in range(M):
-        for j in range(KsampleNum):
-            print("Training:Epoch",k,",(user,j):(",user_idx,",",j,")")
-            targetNode,radio = randomwalk(k, graph, user_idx)
-            vector[targetNode] += radio*vector_origin[user_idx]*0.001
-    return vector
+    randomwalk_results = []
 
+    for user_idx in range(M):
+        user_walks = []
+        for j in range(KsampleNum):
+            targetNode, radio = randomwalk(k, graph, user_idx)
+            user_walks.append((targetNode, radio))
+
+        randomwalk_results.append(torch.tensor(user_walks, device='cuda'))
+
+    # Batch processing
+    targetNodes = torch.stack([walks[:, 0] for walks in randomwalk_results])
+    radios = torch.stack([walks[:, 1] for walks in randomwalk_results])
+
+    vector_origin_batch = vector_origin.unsqueeze(1)  # Add a dimension for broadcasting
+
+    vector[targetNodes] += radios.unsqueeze(-1) * vector_origin_batch * 0.001
+
+    return vector
 def Klayer_sampleNum(k,epsilon,delta,M,index):
     # return N: sample number for k
     N = 1/(2*epsilon*epsilon)*math.log(2*M/delta)*M*math.pow(k,index)
