@@ -40,6 +40,7 @@ def propagateGpu(k, graph, vector_origin, M, N, KsampleNum):
 
     # Batch processing
     targetNodes = torch.stack([walks[:, 0] for walks in randomwalk_results])
+    targetNodes = targetNodes.long()
     radios = torch.stack([walks[:, 1] for walks in randomwalk_results])
 
     vector_origin_batch = vector_origin.unsqueeze(1)  # Add a dimension for broadcasting
