@@ -5,10 +5,15 @@ import torch
 def randomwalk(length, graph, start_node):
     current_node = start_node
     for step in range(length):
-        neighbors = graph[current_node].indices.tolist()  # 转换为列表
+        # 获取当前节点的邻居节点
+        neighbors = torch.nonzero(graph[current_node]).flatten()
         if len(neighbors) == 0:
+            # 当前节点没有邻居，随机游走结束
             break
-        next_node = random.choice(neighbors)
+        # 随机选择一个邻居作为下一步的节点
+        next_node = torch.randint(len(neighbors), size=(1,), device='cuda')
+        next_node = neighbors[next_node]
+        # 更新当前节点为下一步的节点
         current_node = next_node
     radio = 1 / length
     return current_node, radio
