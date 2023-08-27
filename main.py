@@ -61,7 +61,17 @@ vector_propagate_sum = torch.zeros((M + N, N), dtype=torch.float32, device='cuda
 testarray = [[] for _ in range(M)]
 for idx, user in enumerate(dataset.test):
     testarray[idx] = dataset.test[user]
-test = torch.tensor(testarray, dtype=torch.float32, device='cuda')
+test_indices = []  # 初始化一个空列表用于存储测试物品的索引
+
+# 遍历 testarray 中的每个子列表
+for user_items in testarray:
+    # 将用户的测试物品索引添加到 test_indices 中
+    test_indices.extend(user_items)
+
+# 将 test_indices 转换为 PyTorch 张量并移动到 GPU
+test = torch.tensor(test_indices, dtype=torch.long, device='cuda')
+
+# 现在，test 是一个包含所有测试物品索引的 PyTorch 张量，可以在后续的操作中使用
 
 for i in range(1,K+1):
     sampleNum = Klayer_sampleNum(i,0.025, 0.5, M,index)
