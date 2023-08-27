@@ -55,7 +55,7 @@ vector_propagate = [np.zeros((M + N, N)) for _ in range(K)]
 graph_dense = graph.toarray()
 
 graph = torch.tensor(graph_dense, dtype=torch.float32, device='cuda')
-origin_vector = [torch.tensor(v, dtype=torch.float32, device='cuda') for v in vector_origin]
+vector_origin = [torch.tensor(v, dtype=torch.float32, device='cuda') for v in vector_origin]
 vector_propagate_sum = torch.zeros((M + N, N), dtype=torch.float32, device='cuda')
 
 testarray = [[] for _ in range(M)]
