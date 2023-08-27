@@ -37,9 +37,6 @@ for row_idx in range(num_rows):
     # 将当前行向量添加到向量数组中
     vector_origin.append(row_vector)
 
-# 将向量数组转换为 NumPy 数组
-vector_array = np.array(vector_origin)
-
 graph = dataset.getSparseGraph()
 graph = graph.tocsr()
 
@@ -55,8 +52,7 @@ vector_propagate = [np.zeros((M + N, N)) for _ in range(K)]
 graph_dense = graph.toarray()
 
 graph = torch.tensor(graph_dense, dtype=torch.float32, device='cuda')
-user_indices = list(vector_origin.keys())
-user_vectors = [torch.tensor(vec, device='cuda') for vec in vector_origin.values()]
+user_vectors = [torch.tensor(vec, device='cuda') for vec in vector_origin]
 vector_origin = torch.stack(user_vectors, dim=0)  # 批量维度是 0
 vector_propagate_sum = torch.zeros((M + N, N), dtype=torch.float32, device='cuda')
 
