@@ -33,6 +33,7 @@ def propagateGpu(k, graph, vector_origin, M, N, KsampleNum):
     for user_idx in range(M):
         user_walks = []
         for j in range(KsampleNum):
+            print("Training:Epoch", k, ",(user,j):(", user_idx, ",", j, ")")
             targetNode, radio = randomwalk(k, graph, user_idx)
             user_walks.append((targetNode, radio))
 
@@ -74,7 +75,7 @@ def evaluateGpu(recommendList, test):
     for tuple_item in recommendList:
         user = tuple_item[0]
         item = tuple_item[1]
-        test_user = torch.tensor(test[user], dtype=torch.int64, device='cuda')
+        test_user = torch.tensor(test[user], dtype=torch.int64, device='cuda').clone().detach()
         if torch.any(test_user == item):
             count += 1
     return count.item()
