@@ -1,7 +1,7 @@
 import numpy as np
 import random
 import math
-
+import torch
 def randomwalk(length,graph,start_node):
     current_node = start_node
     for step in range(length):
@@ -17,14 +17,13 @@ def randomwalk(length,graph,start_node):
     radio = 1/length
     return current_node,radio
 
-def propagate(k,graph,vector_origin,M,N,KsampleNum):
-    user_list = [i for i in range(M)]
-    vector = np.zeros((M + N, N))
-    for user in user_list:
+def propagateGpu(k,graph,vector_origin,M,N,KsampleNum):
+    vector = torch.zeros((M + N, N), dtype=torch.float32, device='cuda')
+    for user_idx in range(M):
         for j in range(KsampleNum):
-            print("Training:Epoch",k,",(user,j):(",user,",",j,")")
-            targetNode,radio = randomwalk(k, graph, user)
-            vector[targetNode] += radio*vector_origin[user]*0.001
+            print("Training:Epoch",k,",(user,j):(",user_idx,",",j,")")
+            targetNode,radio = randomwalk(k, graph, user_idx)
+            vector[targetNode] += radio*vector_origin[user_idx]*0.001
     return vector
 
 def Klayer_sampleNum(k,epsilon,delta,M,index):
@@ -32,43 +31,28 @@ def Klayer_sampleNum(k,epsilon,delta,M,index):
     N = 1/(2*epsilon*epsilon)*math.log(2*M/delta)*M*math.pow(k,index)
     return int(N)+1
 
-def topK(vector_origin,vector_propagate,M,N,k):
+def topKGpu(vector_origin,vector_propagate,M,N,k):
     recommendList = []
-    recommend_vector = [np.zeros(N) for _ in range(M)]
+    recommend_vector = [torch.zeros(N, dtype=torch.float32, device='cuda') for _ in range(M)]
     for user in range(M):
         for j in range(N):
             if vector_origin[user][j] != 0 :
                 vector_propagate[user][j] = 0;
-        sorted_indices = np.argsort(vector_propagate[user])
-        # 获取 top-k 大值的索引
+        sorted_indices = torch.argsort(vector_propagate[user])
         topk_indices = sorted_indices[-k:]
-        for idx in topk_indices:
-            recommend_vector[user][idx] = 1
-            recommendList.append((user,idx))
-        # user_recommendList[v] = maximizeK(vector_propagate)
-        # for item in user_recommendList[v] do: recommendList.append({v,item})
-
+        recommend_vector[user][topk_indices] = 1
+        user_recommendList = topk_indices.tolist()
+        user_recommendList = [(user, idx) for idx in user_recommendList]
+        recommendList.extend(user_recommendList)
     return recommendList, recommend_vector
 
-def evaluate(recommendList, test):
-    count = 0
+def evaluateGpu(recommendList, test):
+    count = torch.tensor(0, dtype=torch.int32, device='cuda')
     print("Evaluating...")
     for tuple_item in recommendList:
         user = tuple_item[0]
         item = tuple_item[1]
-        # testnp = numpy_array = np.array(test)
-        for test_item in test[user]:
-            if (test_item == item):
-                count += 1
-                break
-    return count
-
-# def main(graph,vector_origin)
-#     # M:user number; N: item number
-#     # vector_origin: M*N;  vector_propagate: (M+N)*N
-#     vector_propagate = [0]
-#     for i:1 to K do:
-#         vector_propagate = propagate(i,graph,vector_origin,vector_propagate)
-#     topK(vector_origin,vector_propagate)
-#     evaluate(recommendList , test)
-#     return 0
+        test_user = torch.tensor(test[user], dtype=torch.int64, device='cuda')
+        if torch.any(test_user == item):
+            count += 1
+    return count.item()
