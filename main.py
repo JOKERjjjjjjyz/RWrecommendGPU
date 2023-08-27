@@ -76,7 +76,7 @@ for i in range(1,K+1):
     sampleNum = Klayer_sampleNum(i,0.025, 0.5, M,index)
     print(type(vector_origin))
     vector_propagate[i-1] = propagateGpu(i,graph,vector_origin,M,N,sampleNum)
-    updated_vector = vector_propagate.cpu().numpy()
+    updated_vector = vector_propagate[i-1].cpu().numpy()
     filename = f"{world.dataset}_matrix_{i-1}.npy"  # 文件名类似于 matrix_0.npy, matrix_1.npy, ...
     np.save(filename, updated_vector[i-1])
     vector_propagate_sum += vector_propagate[i-1]
